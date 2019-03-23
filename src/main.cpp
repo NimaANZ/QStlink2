@@ -23,6 +23,10 @@ This file is part of QSTLink2.
 #include <QCommandLineParser>
 #include "compat.h"
 
+#if defined(WINDOWS)
+#include <Windows.h>
+#endif
+
 bool show = true;
 bool write_flash = false, read_flash = false, erase = false, verify = false;
 QString path;
