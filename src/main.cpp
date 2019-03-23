@@ -19,6 +19,7 @@ This file is part of QSTLink2.
 #include <QStringList>
 #include <QDebug>
 #include <QFile>
+#include <QElapsedTimer>
 #include <QCommandLineParser>
 #include "compat.h"
 

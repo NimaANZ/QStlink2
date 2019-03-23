@@ -22,7 +22,8 @@ This file is part of QSTLink2.
 #include <QFile>
 #include <QByteArray>
 #include <QtEndian>
-#include <QUsb>
+#include <QUsbDevice>
+#include <QUsbManager>
 #include <compat.h>
 #include <devices.h>
 #include <loader.h>
@@ -502,6 +503,8 @@ private slots:
     void scanNewDevices(QtUsb::FilterList list);
 
 private:
+    QtUsb::endpoint mReadEp;
+    QtUsb::endpoint mWriteEp;
     QUsbManager *mUsbMgr; /**< TODO: describe */
     QUsbDevice *mUsbDevice; /**< TODO: describe */
     QtUsb::FilterList mUsbDeviceList; /**< TODO: describe */

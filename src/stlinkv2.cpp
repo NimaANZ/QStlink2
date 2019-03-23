@@ -38,8 +38,9 @@ stlinkv2::stlinkv2(QObject *parent) :
     f2.vid = USB_ST_VID;
     f2.pid = USB_NUCLEO_PID;
 
-    cfg.readEp = USB_PIPE_IN;
-    cfg.writeEp = USB_PIPE_OUT;
+    mReadEp = USB_PIPE_IN;
+    mWriteEp = USB_PIPE_OUT;
+
     cfg.config = USB_CONFIGURATION;
     cfg.alternate = USB_ALTERNATE;
     cfg.interface = USB_INTERFACE;
@@ -84,11 +85,11 @@ void stlinkv2::disconnect()
 
 void stlinkv2::setSTLinkIDs()
 {
-    QtUsb::DeviceConfig cfg = mUsbDevice->getConfig();
+    QtUsb::DeviceConfig cfg = mUsbDevice->config();
     QtUsb::DeviceFilter filt;
 
-    cfg.readEp = USB_PIPE_IN;
-    cfg.writeEp = USB_PIPE_OUT;
+    mReadEp = USB_PIPE_IN;
+    mWriteEp = USB_PIPE_OUT;
     mUsbDevice->setConfig(cfg);
 
     filt.vid = USB_ST_VID;
@@ -99,11 +100,11 @@ void stlinkv2::setSTLinkIDs()
 
 void stlinkv2::setNucleoIDs()
 {
-    QtUsb::DeviceConfig cfg = mUsbDevice->getConfig();
+    QtUsb::DeviceConfig cfg = mUsbDevice->config();
     QtUsb::DeviceFilter filt;
 
-    cfg.readEp = USB_PIPE_IN;
-    cfg.writeEp = USB_PIPE_OUT_NUCLEO;
+    mReadEp = USB_PIPE_IN;
+    mWriteEp = USB_PIPE_OUT_NUCLEO;
     mUsbDevice->setConfig(cfg);
 
     filt.vid = USB_ST_VID;
@@ -120,7 +121,7 @@ bool stlinkv2::isConnected()
 void stlinkv2::flush()
 {
     PrintFuncName();
-    mUsbDevice->flush();
+    mUsbDevice->flush(mReadEp);
 }
 
 stlinkv2::STVersion stlinkv2::getVersion()
@@ -591,7 +592,7 @@ qint32 stlinkv2::writeMem32(quint32 addr, const QByteArray& buf)
     this->sendCommand(cmdbuf); // Send the header
 
     // The actual data we are writing is on the second command
-    return mUsbDevice->write(&sendbuf, sendbuf.size())  - remain;
+    return mUsbDevice->write(&sendbuf, sendbuf.size(), mWriteEp)  - remain;
 }
 
 qint32 stlinkv2::readMem32(QByteArray* buf, quint32 addr, quint16 len)
@@ -609,7 +610,7 @@ qint32 stlinkv2::readMem32(QByteArray* buf, quint32 addr, quint16 len)
     cmd_buf.append((const char*)_addr, sizeof(_addr));
     cmd_buf.append((const char*)_len, sizeof(_len)); //length the data we are requesting
     this->sendCommand(cmd_buf);
-    return mUsbDevice->read(buf, len);
+    return mUsbDevice->read(buf, len, mReadEp);
 }
 
 qint32 stlinkv2::command(QByteArray* buf, quint8 st_cmd0, quint8 st_cmd1, quint32 resp_len)
@@ -622,7 +623,7 @@ qint32 stlinkv2::command(QByteArray* buf, quint8 st_cmd0, quint8 st_cmd1, quint3
     this->sendCommand(cmd);
     if (resp_len > 0)
     {
-        return mUsbDevice->read(buf, resp_len);
+        return mUsbDevice->read(buf, resp_len, mReadEp);
     }
     return 0;
 }
@@ -647,7 +648,7 @@ qint32 stlinkv2::debugCommand(QByteArray* buf, quint8 st_cmd1, quint8 st_cmd2, q
 
     if (resp_len > 0)
     {
-        return mUsbDevice->read(buf, resp_len);
+        return mUsbDevice->read(buf, resp_len, mReadEp);
     }
     return res;
 }
@@ -666,7 +667,7 @@ bool stlinkv2::writeRegister(quint32 val, quint8 index) // Not working on F4 ?
     qToLittleEndian(val, tval);
     cmd.append((const char*)tval, sizeof(tval));
     this->sendCommand(cmd);
-    mUsbDevice->read(&tmp, 2);
+    mUsbDevice->read(&tmp, 2, mReadEp);
 
     const quint32 tmpval = this->readRegister(index);
     if (tmpval != val) {
@@ -692,7 +693,7 @@ quint32 stlinkv2::readRegister(quint8 index)
     cmd.append(index);
     this->sendCommand(cmd);
 
-    mUsbDevice->read(&value, 4+offset);
+    mUsbDevice->read(&value, 4+offset, mReadEp);
     return qFromLittleEndian<quint32>((const uchar*)value.data()+offset);
 }
 
@@ -711,7 +712,7 @@ quint32 stlinkv2::readDbgRegister(quint32 addr)
 
   this->sendCommand(cmd);
 
-  mUsbDevice->read(&value, 8);
+  mUsbDevice->read(&value, 8, mReadEp);
   return qFromLittleEndian<quint32>((const uchar*)value.data()+4);
 }
 
@@ -731,7 +732,7 @@ bool stlinkv2::writeDbgRegister(quint32 addr, quint32 val)
   cmd.append((const char*)_val, sizeof(_val));
 
   this->sendCommand(cmd);
-  mUsbDevice->read(&value, 2);
+  mUsbDevice->read(&value, 2, mReadEp);
 
   return (quint8)value.at(0) == STLink::Status::OK;
 }
@@ -747,7 +748,7 @@ qint32 stlinkv2::sendCommand(const QByteArray& cmd)
     tmp.prepend(cmd);
     tmp.resize(cmd_size);
 
-    ret = mUsbDevice->write(&tmp, tmp.size());
+    ret = mUsbDevice->write(&tmp, tmp.size(), mWriteEp);
     if (ret > 0) {
 
     }

@@ -19,12 +19,11 @@
 #   You should have received a copy of the GNU General Public License
 #   along with QSTLink2.  If not, see <http://www.gnu.org/licenses/>.
 
-QT += core gui xml widgets
-win32:CONFIG += winusb
+QT += core gui xml widgets usb
 
 TEMPLATE = app
 TARGET = qstlink2
-VERSION = 1.2.4
+VERSION = 1.3.0
 
 message(Building version $$VERSION for Qt $$QT_VERSION)
 
@@ -52,8 +51,6 @@ HEADERS  += inc/mainwindow.h \
     inc/compat.h \
     inc/loader.h \
     res/version.h
-
-include(QtUsb/src/QtUsb.pri)
 
 windows {
     TARGET = qstlink2_$${VERSION}
